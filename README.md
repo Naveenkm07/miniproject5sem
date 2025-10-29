@@ -69,19 +69,19 @@ npm run preview
 ## 📸 Screenshots
 
 ### Dashboard
-![Dashboard](screenshots/dashboard.png)
+![Dashboard](images/dashboard.png)
 *Quick actions and recent memories at a glance*
 
 ### Gallery with Thumbnails
-![Gallery](screenshots/gallery.png)
+![Gallery](images/gallery.png)
 *Fast-loading thumbnail grid with favorites and filters*
 
 ### Statistics & Charts
-![Statistics](screenshots/statistics.png)
+![Statistics](images/statistics.png)
 *Beautiful visualizations of your memory data*
 
 ### Albums
-![Albums](screenshots/albums.png)
+![Albums](images/albums.png)
 *Custom collections for organizing memories*
 
 ## 🎨 Tech Stack
