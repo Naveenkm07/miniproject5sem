@@ -358,7 +358,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Your Name**
 - GitHub: [@yourusername](https://github.com/yourusername)
-- Email: your.email@example.com
+- Email: kmnaveenkm01@gmail.com
 
 ## 🙏 Acknowledgments
 
@@ -372,7 +372,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For support, questions, or feedback:
 - Open an issue on GitHub
-- Email: support@memoriavault.com
+- Email: kmnaveenkm85@gmail.com
 - Documentation: [Wiki](https://github.com/yourusername/memoria-vault-react/wiki)
 
 ---
