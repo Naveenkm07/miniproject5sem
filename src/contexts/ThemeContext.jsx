@@ -30,6 +30,15 @@ export const COLOR_SCHEMES = {
 };
 
 export const ThemeProvider = ({ children }) => {
+  // Initialize theme immediately from localStorage to prevent flash
+  const getInitialTheme = () => {
+    const savedMode = localStorage.getItem('theme-mode') || THEME_MODES.AUTO;
+    if (savedMode === THEME_MODES.AUTO) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return savedMode;
+  };
+
   // Load saved preferences or use defaults
   const [themeMode, setThemeMode] = useState(() => {
     return localStorage.getItem('theme-mode') || THEME_MODES.AUTO;
@@ -40,7 +49,7 @@ export const ThemeProvider = ({ children }) => {
   });
 
   // Determine actual theme based on mode
-  const [actualTheme, setActualTheme] = useState('light');
+  const [actualTheme, setActualTheme] = useState(getInitialTheme);
 
   useEffect(() => {
     if (themeMode === THEME_MODES.AUTO) {

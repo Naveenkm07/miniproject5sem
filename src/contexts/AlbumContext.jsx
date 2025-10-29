@@ -13,6 +13,7 @@ export const useAlbums = () => {
 
 export const AlbumProvider = ({ children }) => {
   const [albums, setAlbums] = useState([]);
+  const [smartAlbums, setSmartAlbums] = useState([]);
 
   // Load albums from IndexedDB on mount
   useEffect(() => {
@@ -21,6 +22,12 @@ export const AlbumProvider = ({ children }) => {
         const stored = localStorage.getItem('memoria-vault-albums');
         if (stored) {
           setAlbums(JSON.parse(stored));
+        }
+        
+        // Load smart albums
+        const smartStored = localStorage.getItem('memoria-vault-smart-albums');
+        if (smartStored) {
+          setSmartAlbums(JSON.parse(smartStored));
         }
       } catch (error) {
         console.error('Error loading albums:', error);
@@ -39,12 +46,23 @@ export const AlbumProvider = ({ children }) => {
     }
   }, [albums]);
 
+  // Save smart albums
+  useEffect(() => {
+    try {
+      localStorage.setItem('memoria-vault-smart-albums', JSON.stringify(smartAlbums));
+    } catch (error) {
+      console.error('Error saving smart albums:', error);
+    }
+  }, [smartAlbums]);
+
   const createAlbum = (albumData) => {
     const newAlbum = {
       ...albumData,
       id: Date.now().toString(36) + Math.random().toString(36).substr(2),
       dateCreated: new Date().toISOString(),
-      memoryIds: albumData.memoryIds || []
+      memoryIds: albumData.memoryIds || [],
+      parentAlbumId: albumData.parentAlbumId || null, // Support for nested albums
+      isSmartAlbum: false
     };
 
     setAlbums(prev => [...prev, newAlbum]);
@@ -104,15 +122,51 @@ export const AlbumProvider = ({ children }) => {
     );
   };
 
+  const createSmartAlbum = (smartAlbumData) => {
+    const newSmartAlbum = {
+      ...smartAlbumData,
+      id: `smart_${Date.now().toString(36)}`,
+      dateCreated: new Date().toISOString(),
+      isSmartAlbum: true
+    };
+
+    setSmartAlbums(prev => [...prev, newSmartAlbum]);
+    return newSmartAlbum;
+  };
+
+  const updateSmartAlbum = (albumId, updates) => {
+    setSmartAlbums(prev => prev.map(album => 
+      album.id === albumId ? { ...album, ...updates } : album
+    ));
+  };
+
+  const deleteSmartAlbum = (albumId) => {
+    setSmartAlbums(prev => prev.filter(album => album.id !== albumId));
+  };
+
+  const getChildAlbums = (parentAlbumId) => {
+    return albums.filter(album => album.parentAlbumId === parentAlbumId);
+  };
+
+  const getRootAlbums = () => {
+    return albums.filter(album => !album.parentAlbumId);
+  };
+
   const value = {
     albums,
+    smartAlbums,
     createAlbum,
     updateAlbum,
     deleteAlbum,
     addMemoryToAlbum,
     removeMemoryFromAlbum,
     getAlbumMemories,
-    getMemoryAlbums
+    getMemoryAlbums,
+    createSmartAlbum,
+    updateSmartAlbum,
+    deleteSmartAlbum,
+    getChildAlbums,
+    getRootAlbums
   };
 
   return (

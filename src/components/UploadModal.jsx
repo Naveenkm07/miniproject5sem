@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { generateThumbnail } from '../utils/thumbnail';
 import { detectFileCategory, readFileAsDataURL } from '../utils/helpers';
+import { generateSmartTags, smartCategorize } from '../utils/aiFeatures';
+import PhotoEditor from './PhotoEditor';
+import CameraCapture from './CameraCapture';
+import { Camera, Image as ImageIcon, Sparkles } from 'lucide-react';
 
-const UploadModal = ({ isOpen, onClose, onSave }) => {
+const UploadModal = ({ isOpen, onClose, onSave, showToast }) => {
   const [files, setFiles] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -14,6 +18,9 @@ const UploadModal = ({ isOpen, onClose, onSave }) => {
     dateCreated: new Date().toISOString().split('T')[0]
   });
   const [loading, setLoading] = useState(false);
+  const [showPhotoEditor, setShowPhotoEditor] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [editingImage, setEditingImage] = useState(null);
 
   const handleFileSelection = (selectedFiles) => {
     if (selectedFiles.length === 0) return;
@@ -21,11 +28,14 @@ const UploadModal = ({ isOpen, onClose, onSave }) => {
     setFiles(selectedFiles);
     const file = selectedFiles[0];
 
+    // Smart categorization
+    const smartCategory = smartCategorize(file);
+
     // Auto-fill form
     setFormData({
       title: file.name.replace(/\.[^/.]+$/, ''),
       description: '',
-      category: detectFileCategory(file.type),
+      category: smartCategory,
       tags: '',
       dateCreated: new Date().toISOString().split('T')[0]
     });
@@ -85,6 +95,11 @@ const UploadModal = ({ isOpen, onClose, onSave }) => {
         thumbnail
       };
 
+      // Generate AI smart tags and merge with user tags
+      const smartTags = generateSmartTags(memory);
+      const combinedTags = [...new Set([...memory.tags, ...smartTags])];
+      memory.tags = combinedTags;
+
       onSave(memory);
       handleClose();
     } catch (error) {
@@ -98,6 +113,9 @@ const UploadModal = ({ isOpen, onClose, onSave }) => {
   const handleClose = () => {
     setFiles(null);
     setShowForm(false);
+    setShowPhotoEditor(false);
+    setShowCamera(false);
+    setEditingImage(null);
     setFormData({
       title: '',
       description: '',
@@ -106,6 +124,29 @@ const UploadModal = ({ isOpen, onClose, onSave }) => {
       dateCreated: new Date().toISOString().split('T')[0]
     });
     onClose();
+  };
+
+  const handleCameraCapture = async (imageData) => {
+    // Convert camera image to File object
+    const blob = await (await fetch(imageData)).blob();
+    const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
+    handleFileSelection([file]);
+  };
+
+  const handleEditPhoto = () => {
+    if (files && files[0] && files[0].type.startsWith('image/')) {
+      readFileAsDataURL(files[0]).then(data => {
+        setEditingImage(data);
+        setShowPhotoEditor(true);
+      });
+    }
+  };
+
+  const handlePhotoEdited = async (editedImageData) => {
+    // Convert edited image to File object
+    const blob = await (await fetch(editedImageData)).blob();
+    const file = new File([blob], files[0].name, { type: 'image/jpeg' });
+    handleFileSelection([file]);
   };
 
   const handleBackdropClick = (e) => {
@@ -117,37 +158,52 @@ const UploadModal = ({ isOpen, onClose, onSave }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal" onClick={handleBackdropClick}>
-      <div className="modal-backdrop"></div>
-      <div className="modal-content">
-        <div className="modal-header">
-          <h2>Upload Memory</h2>
-          <button className="modal-close" onClick={handleClose}>✕</button>
-        </div>
-        <div className="modal-body">
-          {!showForm ? (
-            <div
-              className={`upload-area ${isDragging ? 'dragover' : ''}`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => document.getElementById('fileInput').click()}
-            >
-              <div className="upload-content">
-                <div className="upload-icon">📁</div>
-                <h3>Drop files here or click to browse</h3>
-                <p>Supports photos, videos, audio, and documents</p>
-              </div>
-              <input
-                type="file"
-                id="fileInput"
-                multiple
-                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
-                onChange={handleFileInputChange}
-                style={{ display: 'none' }}
-              />
-            </div>
-          ) : (
+    <>
+      <div className="modal" onClick={handleBackdropClick}>
+        <div className="modal-backdrop"></div>
+        <div className="modal-content">
+          <div className="modal-header">
+            <h2>Upload Memory</h2>
+            <button className="modal-close" onClick={handleClose}>✕</button>
+          </div>
+          <div className="modal-body">
+            {!showForm ? (
+              <>
+                <div
+                  className={`upload-area ${isDragging ? 'dragover' : ''}`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => document.getElementById('fileInput').click()}
+                >
+                  <div className="upload-content">
+                    <div className="upload-icon">📁</div>
+                    <h3>Drop files here or click to browse</h3>
+                    <p>Supports photos, videos, audio, and documents</p>
+                  </div>
+                  <input
+                    type="file"
+                    id="fileInput"
+                    multiple
+                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                    onChange={handleFileInputChange}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+                
+                {/* Quick Action Buttons */}
+                <div className="flex gap-3 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowCamera(true)}
+                    className="btn btn--outline flex-1 flex items-center justify-center gap-2"
+                  >
+                    <Camera size={18} />
+                    Take Photo
+                  </button>
+                </div>
+              </>
+            ) : (
             <form onSubmit={handleSubmit} className="memory-form">
               <div className="form-group">
                 <label className="form-label">Title</label>
@@ -207,6 +263,11 @@ const UploadModal = ({ isOpen, onClose, onSave }) => {
                 <button type="button" className="btn btn--outline" onClick={handleClose}>
                   Cancel
                 </button>
+                {files && files[0] && files[0].type.startsWith('image/') && (
+                  <button type="button" className="btn btn--outline" onClick={handleEditPhoto}>
+                    ✏️ Edit Photo
+                  </button>
+                )}
                 <button type="submit" className="btn btn--primary" disabled={loading}>
                   {loading ? 'Saving...' : 'Save Memory'}
                 </button>
@@ -216,6 +277,24 @@ const UploadModal = ({ isOpen, onClose, onSave }) => {
         </div>
       </div>
     </div>
+
+    {/* Photo Editor Modal */}
+    <PhotoEditor
+      isOpen={showPhotoEditor}
+      image={editingImage}
+      onClose={() => setShowPhotoEditor(false)}
+      onSave={handlePhotoEdited}
+      showToast={showToast}
+    />
+
+    {/* Camera Capture Modal */}
+    <CameraCapture
+      isOpen={showCamera}
+      onClose={() => setShowCamera(false)}
+      onCapture={handleCameraCapture}
+      showToast={showToast}
+    />
+    </>
   );
 };
 

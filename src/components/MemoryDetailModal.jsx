@@ -1,6 +1,7 @@
 import { getCategoryIcon, formatFileSize } from '../utils/helpers';
+import CommentsSection from './CommentsSection';
 
-const MemoryDetailModal = ({ isOpen, memory, onClose, onDelete, onDownload, onToggleFavorite, onEdit, onAddToAlbum }) => {
+const MemoryDetailModal = ({ isOpen, memory, onClose, onDelete, onDownload, onToggleFavorite, onEdit, onAddToAlbum, onShare, onOpenLinks, showToast }) => {
   if (!isOpen || !memory) return null;
 
   const handleBackdropClick = (e) => {
@@ -88,6 +89,11 @@ const MemoryDetailModal = ({ isOpen, memory, onClose, onDelete, onDownload, onTo
               </div>
             </div>
           </div>
+
+          {/* Comments Section */}
+          <div className="mt-6">
+            <CommentsSection memoryId={memory.id} showToast={showToast} />
+          </div>
         </div>
         <div className="modal-footer">
           <button className="btn btn--outline" onClick={handleDelete}>Delete</button>
@@ -98,6 +104,22 @@ const MemoryDetailModal = ({ isOpen, memory, onClose, onDelete, onDownload, onTo
               style={{ marginLeft: 'auto', marginRight: '8px' }}
             >
               ✏️ Edit
+            </button>
+          )}
+          {onOpenLinks && (
+            <button 
+              className="btn btn--outline" 
+              onClick={() => onOpenLinks(memory)}
+            >
+              🔗 Links
+            </button>
+          )}
+          {onShare && (
+            <button 
+              className="btn btn--outline" 
+              onClick={() => onShare(memory)}
+            >
+              📤 Share
             </button>
           )}
           {onAddToAlbum && (

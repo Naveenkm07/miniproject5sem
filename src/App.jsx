@@ -10,7 +10,15 @@ import BulkUploadModal from './components/BulkUploadModal';
 import ImportModal from './components/ImportModal';
 import EditMemoryModal from './components/EditMemoryModal';
 import AddToAlbumModal from './components/AddToAlbumModal';
+import ShareModal from './components/ShareModal';
+import RemindersModal from './components/RemindersModal';
 import MemoryDetailModal from './components/MemoryDetailModal';
+import MemoryLinksModal from './components/MemoryLinksModal';
+import GoogleDriveBackup from './components/GoogleDriveBackup';
+import DuplicateDetector from './components/DuplicateDetector';
+import CollaborationModal from './components/CollaborationModal';
+import InstallPrompt from './components/InstallPrompt';
+import OfflineIndicator from './components/OfflineIndicator';
 import Dashboard from './pages/Dashboard';
 import Gallery from './pages/Gallery';
 import Albums from './pages/Albums';
@@ -27,6 +35,13 @@ const AppContent = () => {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [addToAlbumModalOpen, setAddToAlbumModalOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [remindersModalOpen, setRemindersModalOpen] = useState(false);
+  const [linksModalOpen, setLinksModalOpen] = useState(false);
+  const [googleDriveModalOpen, setGoogleDriveModalOpen] = useState(false);
+  const [duplicateDetectorOpen, setDuplicateDetectorOpen] = useState(false);
+  const [collaborationModalOpen, setCollaborationModalOpen] = useState(false);
+  const [selectedAlbum, setSelectedAlbum] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedMemory, setSelectedMemory] = useState(null);
   const [currentAlbumId, setCurrentAlbumId] = useState(null);
@@ -116,6 +131,45 @@ const AppContent = () => {
     setAddToAlbumModalOpen(true);
   };
 
+  const handleOpenShare = (memory) => {
+    setSelectedMemory(memory);
+    setDetailModalOpen(false);
+    setShareModalOpen(true);
+  };
+
+  const handleOpenLinks = (memory) => {
+    setSelectedMemory(memory);
+    setDetailModalOpen(false);
+    setLinksModalOpen(true);
+  };
+
+  const exportDataForBackup = () => {
+    return {
+      memories,
+      exportDate: new Date().toISOString(),
+      version: '2.0'
+    };
+  };
+
+  const importDataFromBackup = async (data) => {
+    if (!data.memories || !Array.isArray(data.memories)) {
+      throw new Error('Invalid backup data format');
+    }
+
+    // Clear existing data
+    await clearAllData();
+
+    // Import memories one by one
+    for (const memory of data.memories) {
+      await importMemory(memory, 'merge', 'skip');
+    }
+  };
+
+  const handleOpenCollaboration = (album) => {
+    setSelectedAlbum(album);
+    setCollaborationModalOpen(true);
+  };
+
   const handleDownload = () => {
     showToast('success', 'Memory downloaded successfully');
   };
@@ -125,6 +179,9 @@ const AppContent = () => {
       onOpenUpload: () => setUploadModalOpen(true),
       onOpenBulkUpload: () => setBulkUploadModalOpen(true),
       onOpenImport: () => setImportModalOpen(true),
+      onOpenReminders: () => setRemindersModalOpen(true),
+      onOpenGoogleDrive: () => setGoogleDriveModalOpen(true),
+      onOpenDuplicateDetector: () => setDuplicateDetectorOpen(true),
       onNavigate: setCurrentPage,
       onOpenMemoryDetail: handleOpenMemoryDetail,
       showToast
@@ -133,7 +190,7 @@ const AppContent = () => {
     switch (currentPage) {
       case 'dashboard': return <Dashboard {...props} />;
       case 'gallery': return <Gallery {...props} />;
-      case 'albums': return <Albums {...props} onOpenAlbumView={handleOpenAlbumView} />;
+      case 'albums': return <Albums {...props} onOpenAlbumView={handleOpenAlbumView} onOpenCollaboration={handleOpenCollaboration} />;
       case 'albumView': return <AlbumView albumId={currentAlbumId} onBack={handleBackToAlbums} onOpenMemoryDetail={handleOpenMemoryDetail} showToast={showToast} />;
       case 'timeline': return <Timeline {...props} />;
       case 'stats': return <Statistics />;
@@ -146,7 +203,7 @@ const AppContent = () => {
     <div id="app">
       <Navbar currentPage={currentPage} onNavigate={setCurrentPage} />
       <main className="main-content">{renderPage()}</main>
-      <UploadModal isOpen={uploadModalOpen} onClose={() => setUploadModalOpen(false)} onSave={handleSaveMemory} />
+      <UploadModal isOpen={uploadModalOpen} onClose={() => setUploadModalOpen(false)} onSave={handleSaveMemory} showToast={showToast} />
       <BulkUploadModal isOpen={bulkUploadModalOpen} onClose={() => setBulkUploadModalOpen(false)} onSave={handleSaveMemory} />
       <ImportModal 
         isOpen={importModalOpen} 
@@ -175,8 +232,52 @@ const AppContent = () => {
         onToggleFavorite={handleToggleFavorite}
         onEdit={handleEditMemory}
         onAddToAlbum={handleOpenAddToAlbum}
+        onShare={handleOpenShare}
+        onOpenLinks={handleOpenLinks}
+        showToast={showToast}
+      />
+      <ShareModal
+        isOpen={shareModalOpen}
+        memory={selectedMemory}
+        onClose={() => { setShareModalOpen(false); setSelectedMemory(null); }}
+        showToast={showToast}
+      />
+      <RemindersModal
+        isOpen={remindersModalOpen}
+        onClose={() => setRemindersModalOpen(false)}
+        showToast={showToast}
+        memories={memories}
+      />
+      <MemoryLinksModal
+        isOpen={linksModalOpen}
+        memory={selectedMemory}
+        onClose={() => { setLinksModalOpen(false); setSelectedMemory(null); }}
+        showToast={showToast}
+      />
+      <GoogleDriveBackup
+        isOpen={googleDriveModalOpen}
+        onClose={() => setGoogleDriveModalOpen(false)}
+        showToast={showToast}
+        exportDataFn={exportDataForBackup}
+        importDataFn={importDataFromBackup}
+      />
+      <DuplicateDetector
+        isOpen={duplicateDetectorOpen}
+        onClose={() => setDuplicateDetectorOpen(false)}
+        showToast={showToast}
+      />
+      <CollaborationModal
+        isOpen={collaborationModalOpen}
+        album={selectedAlbum}
+        onClose={() => {
+          setCollaborationModalOpen(false);
+          setSelectedAlbum(null);
+        }}
+        showToast={showToast}
       />
       <Toast toasts={toasts} onRemove={removeToast} />
+      <InstallPrompt />
+      <OfflineIndicator />
     </div>
   );
 };

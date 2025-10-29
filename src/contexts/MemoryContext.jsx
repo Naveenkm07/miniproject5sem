@@ -14,6 +14,7 @@ export const useMemories = () => {
 
 export const MemoryProvider = ({ children }) => {
   const [memories, setMemories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState({
     search: '',
     category: '',
@@ -33,6 +34,7 @@ export const MemoryProvider = ({ children }) => {
           if (stored) {
             setMemories(JSON.parse(stored));
           }
+          setIsLoading(false);
           return;
         }
 
@@ -49,8 +51,10 @@ export const MemoryProvider = ({ children }) => {
         // Load memories from IndexedDB
         const loadedMemories = await indexedDB.getAllMemories();
         setMemories(loadedMemories);
+        setIsLoading(false);
       } catch (error) {
         console.error('Error loading memories:', error);
+        setIsLoading(false);
       }
     };
 
@@ -270,6 +274,7 @@ export const MemoryProvider = ({ children }) => {
   const value = {
     memories,
     filters,
+    isLoading,
     addMemory,
     updateMemory,
     deleteMemory,

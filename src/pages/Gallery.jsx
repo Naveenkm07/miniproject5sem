@@ -1,9 +1,33 @@
+import { useState, useCallback, useMemo } from 'react';
 import { useMemories } from '../contexts/MemoryContext';
 import MemoryCard from '../components/MemoryCard';
+import SearchBar from '../components/SearchBar';
+import LazyImage from '../components/LazyImage';
+import { applyAllFilters } from '../utils/searchFilters';
 
 const Gallery = ({ onOpenUpload, onOpenBulkUpload, onOpenMemoryDetail }) => {
-  const { filters, updateFilters, getFilteredMemories, toggleFavorite } = useMemories();
-  const filteredMemories = getFilteredMemories();
+  const { memories, toggleFavorite } = useMemories();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState({
+    category: '',
+    dateRange: '',
+    tags: '',
+    favorites: false,
+    sortBy: 'dateAdded-desc'
+  });
+
+  // Apply search and filters with memoization
+  const filteredMemories = useMemo(() => {
+    return applyAllFilters(memories, searchQuery, filters);
+  }, [memories, searchQuery, filters]);
+
+  const handleSearch = useCallback((query) => {
+    setSearchQuery(query);
+  }, []);
+
+  const handleFilterChange = useCallback((newFilters) => {
+    setFilters(newFilters);
+  }, []);
 
   return (
     <div className="container">
@@ -19,50 +43,12 @@ const Gallery = ({ onOpenUpload, onOpenBulkUpload, onOpenMemoryDetail }) => {
         </div>
       </div>
 
-      {/* Search and Filter Controls */}
-      <div className="controls-section">
-        <div className="search-section">
-          <input
-            type="text"
-            className="form-control search-input"
-            placeholder="Search memories..."
-            value={filters.search}
-            onChange={(e) => updateFilters({ search: e.target.value })}
-          />
-        </div>
-        <div className="filter-section">
-          <select
-            className="form-control"
-            value={filters.showFavorites || ''}
-            onChange={(e) => updateFilters({ showFavorites: e.target.value })}
-          >
-            <option value="">All Memories</option>
-            <option value="true">⭐ Favorites Only</option>
-          </select>
-          <select
-            className="form-control"
-            value={filters.category}
-            onChange={(e) => updateFilters({ category: e.target.value })}
-          >
-            <option value="">All Categories</option>
-            <option value="Photos">📷 Photos</option>
-            <option value="Videos">🎥 Videos</option>
-            <option value="Audio">🎵 Audio</option>
-            <option value="Documents">📄 Documents</option>
-            <option value="Notes">📝 Notes</option>
-          </select>
-          <select
-            className="form-control"
-            value={filters.sortBy}
-            onChange={(e) => updateFilters({ sortBy: e.target.value })}
-          >
-            <option value="dateAdded">Date Added</option>
-            <option value="dateCreated">Date Created</option>
-            <option value="title">Title</option>
-            <option value="category">Category</option>
-          </select>
-        </div>
-      </div>
+      {/* Enhanced Search and Filter Controls */}
+      <SearchBar
+        onSearch={handleSearch}
+        onFilterChange={handleFilterChange}
+        totalResults={filteredMemories.length}
+      />
 
       {/* Memories Grid */}
       <div className="memories-grid">

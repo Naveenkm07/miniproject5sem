@@ -1,4 +1,5 @@
 import { getCategoryIcon, formatFileSize } from '../utils/helpers';
+import LazyImage from './LazyImage';
 
 const MemoryCard = ({ memory, onClick, onToggleFavorite }) => {
   const handleFavoriteClick = (e) => {
@@ -13,11 +14,17 @@ const MemoryCard = ({ memory, onClick, onToggleFavorite }) => {
     const displayData = memory.thumbnail || memory.fileData;
 
     if (memory.fileType.startsWith('image/')) {
-      return <img src={displayData} alt={memory.title} />;
+      return (
+        <LazyImage 
+          src={displayData} 
+          alt={memory.title}
+          placeholder="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3Crect fill='%23333' width='400' height='300'/%3E%3C/svg%3E"
+        />
+      );
     } else if (memory.fileType.startsWith('video/')) {
       // For videos, always use thumbnail if available, otherwise show full video
       return memory.thumbnail ? (
-        <img src={memory.thumbnail} alt={memory.title} />
+        <LazyImage src={memory.thumbnail} alt={memory.title} />
       ) : (
         <video src={memory.fileData} muted />
       );

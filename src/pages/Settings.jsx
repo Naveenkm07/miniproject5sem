@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useMemories } from '../contexts/MemoryContext';
 import { getStorageEstimate } from '../utils/indexedDB';
+import PWASettings from '../components/PWASettings';
 
-const Settings = ({ showToast, onOpenImport }) => {
+const Settings = ({ showToast, onOpenImport, onOpenReminders, onOpenGoogleDrive, onOpenDuplicateDetector }) => {
   const { theme, setTheme } = useTheme();
   const { exportAllData, clearAllData } = useMemories();
   const [storageInfo, setStorageInfo] = useState(null);
@@ -74,6 +75,43 @@ const Settings = ({ showToast, onOpenImport }) => {
               <option value="light">Light Mode</option>
               <option value="dark">Dark Mode</option>
             </select>
+          </div>
+        </div>
+        <div className="settings-section">
+          <h3>Reminders & Notifications</h3>
+          <div className="setting-item">
+            <button className="btn btn--primary" onClick={onOpenReminders}>
+              ⏰ Manage Reminders
+            </button>
+            <p className="setting-description">
+              Set up reminders for birthdays, anniversaries, and special memories
+            </p>
+          </div>
+        </div>
+        <div className="settings-section">
+          <h3>Progressive Web App</h3>
+          <PWASettings showToast={showToast} />
+        </div>
+        <div className="settings-section">
+          <h3>Cloud Backup & Sync</h3>
+          <div className="setting-item">
+            <button className="btn btn--primary" onClick={onOpenGoogleDrive}>
+              ☁️ Google Drive Backup
+            </button>
+            <p className="setting-description">
+              Backup and restore your memories to Google Drive (15GB free storage)
+            </p>
+          </div>
+        </div>
+        <div className="settings-section">
+          <h3>AI-Powered Tools</h3>
+          <div className="setting-item">
+            <button className="btn btn--primary" onClick={onOpenDuplicateDetector}>
+              🤖 Find Duplicates
+            </button>
+            <p className="setting-description">
+              AI-powered duplicate detection to clean up your library
+            </p>
           </div>
         </div>
         <div className="settings-section">

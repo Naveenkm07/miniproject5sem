@@ -1,9 +1,12 @@
 import { useMemories } from '../contexts/MemoryContext';
 import { useAlbums } from '../contexts/AlbumContext';
 import MemoryCard from '../components/MemoryCard';
+import OnThisDay from '../components/OnThisDay';
+import UpcomingAnniversaries from '../components/UpcomingAnniversaries';
+import StorageMonitor from '../components/StorageMonitor';
 import { useMemo } from 'react';
 
-const Dashboard = ({ onOpenUpload, onOpenBulkUpload, onNavigate, onOpenMemoryDetail }) => {
+const Dashboard = ({ onOpenUpload, onOpenBulkUpload, onNavigate, onOpenMemoryDetail, showToast }) => {
   const { memories, toggleFavorite } = useMemories();
   const { albums } = useAlbums();
 
@@ -48,6 +51,9 @@ const Dashboard = ({ onOpenUpload, onOpenBulkUpload, onNavigate, onOpenMemoryDet
 
   return (
     <div className="container">
+      {/* On This Day Section */}
+      <OnThisDay memories={memories} onOpenMemory={onOpenMemoryDetail} />
+
       {/* Hero Section - AI Analytics Style */}
       <div className="hero-section" style={{
         background: 'var(--gradient-primary)',
@@ -241,6 +247,14 @@ const Dashboard = ({ onOpenUpload, onOpenBulkUpload, onNavigate, onOpenMemoryDet
         </div>
       </div>
 
+      {/* Upcoming Anniversaries */}
+      <UpcomingAnniversaries memories={memories} onOpenMemory={onOpenMemoryDetail} />
+
+      {/* Storage Monitor */}
+      <div style={{ marginBottom: '32px' }}>
+        <StorageMonitor showToast={showToast} />
+      </div>
+
       {/* Quick Actions */}
       <div className="quick-actions">
         <div className="action-grid">
@@ -271,6 +285,9 @@ const Dashboard = ({ onOpenUpload, onOpenBulkUpload, onNavigate, onOpenMemoryDet
           </button>
         </div>
       </div>
+
+      {/* Upcoming Anniversaries */}
+      <UpcomingAnniversaries memories={memories} onOpenMemory={onOpenMemoryDetail} />
 
       {/* Recent Memories */}
       <div className="recent-memories">

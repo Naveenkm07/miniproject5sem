@@ -1,13 +1,37 @@
 import { useState } from 'react';
 import { useAlbums } from '../contexts/AlbumContext';
 import { useMemories } from '../contexts/MemoryContext';
+import { getSmartAlbumMemories } from '../utils/smartAlbums';
+import SmartAlbumModal from '../components/SmartAlbumModal';
 
-const Albums = ({ onOpenAlbumView, showToast }) => {
-  const { albums, createAlbum, deleteAlbum } = useAlbums();
+const Albums = ({ onOpenAlbumView, onOpenCollaboration, showToast }) => {
+  const { albums, createAlbum, deleteAlbum, smartAlbums, deleteSmartAlbum } = useAlbums();
   const { memories } = useMemories();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showSmartAlbumModal, setShowSmartAlbumModal] = useState(false);
   const [newAlbumName, setNewAlbumName] = useState('');
   const [newAlbumDescription, setNewAlbumDescription] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('regular'); // 'regular' or 'smart'
+
+  // Filter albums based on search query
+  const filteredAlbums = albums.filter(album => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      album.name.toLowerCase().includes(query) ||
+      (album.description && album.description.toLowerCase().includes(query))
+    );
+  });
+
+  const filteredSmartAlbums = smartAlbums.filter(album => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      album.name.toLowerCase().includes(query) ||
+      (album.description && album.description.toLowerCase().includes(query))
+    );
+  });
 
   const handleCreateAlbum = (e) => {
     e.preventDefault();
@@ -50,19 +74,108 @@ const Albums = ({ onOpenAlbumView, showToast }) => {
     return album.memoryIds.length;
   };
 
+  const getSmartAlbumMemoryCount = (smartAlbum) => {
+    return getSmartAlbumMemories(memories, smartAlbum).length;
+  };
+
+  const handleDeleteSmartAlbum = (albumId, albumName) => {
+    if (window.confirm(`Delete smart album "${albumName}"?`)) {
+      deleteSmartAlbum(albumId);
+      showToast('success', 'Smart album deleted');
+    }
+  };
+
   return (
     <div className="container">
       <div className="page-header">
         <h1>Albums</h1>
-        <button 
-          className="btn btn--primary"
-          onClick={() => setShowCreateModal(true)}
+        <div className="flex items-center space-x-3">
+          <button 
+            className="btn btn--outline"
+            onClick={() => setShowSmartAlbumModal(true)}
+          >
+            ✨ Smart Album
+          </button>
+          <button 
+            className="btn btn--primary"
+            onClick={() => setShowCreateModal(true)}
+          >
+            ➕ Create Album
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ marginBottom: '24px', display: 'flex', gap: '12px', borderBottom: '1px solid var(--color-border)', paddingBottom: '12px' }}>
+        <button
+          className={`btn btn--sm ${activeTab === 'regular' ? 'btn--primary' : 'btn--outline'}`}
+          onClick={() => setActiveTab('regular')}
         >
-          ➕ Create Album
+          📁 Regular Albums ({albums.length})
+        </button>
+        <button
+          className={`btn btn--sm ${activeTab === 'smart' ? 'btn--primary' : 'btn--outline'}`}
+          onClick={() => setActiveTab('smart')}
+        >
+          ✨ Smart Albums ({smartAlbums.length})
         </button>
       </div>
 
-      {albums.length === 0 ? (
+      {/* Search Bar */}
+      {albums.length > 0 && (
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{
+            position: 'relative',
+            maxWidth: '600px'
+          }}>
+            <input
+              type="text"
+              placeholder="Search albums by name or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 40px 12px 16px',
+                fontSize: '0.95rem',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-base)',
+                background: 'var(--color-surface)',
+                color: 'var(--color-text)'
+              }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{
+                  position: 'absolute',
+                  right: '8px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  fontSize: '1.2rem',
+                  color: 'var(--color-text-secondary)'
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {searchQuery && (
+            <div style={{
+              marginTop: '8px',
+              fontSize: '0.875rem',
+              color: 'var(--color-text-secondary)'
+            }}>
+              Found {filteredAlbums.length} {filteredAlbums.length === 1 ? 'album' : 'albums'}
+            </div>
+          )}
+        </div>
+      )}
+
+      {filteredAlbums.length === 0 && albums.length === 0 ? (
         <div style={{ 
           textAlign: 'center', 
           padding: '60px 20px',
@@ -79,13 +192,30 @@ const Albums = ({ onOpenAlbumView, showToast }) => {
             Create Your First Album
           </button>
         </div>
+      ) : filteredAlbums.length === 0 ? (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '60px 20px',
+          color: 'var(--color-text-secondary)'
+        }}>
+          <div style={{ fontSize: '64px', marginBottom: '16px' }}>🔍</div>
+          <h2>No Albums Found</h2>
+          <p>No albums match your search "{searchQuery}"</p>
+          <button 
+            className="btn btn--outline"
+            onClick={() => setSearchQuery('')}
+            style={{ marginTop: '20px' }}
+          >
+            Clear Search
+          </button>
+        </div>
       ) : (
         <div className="albums-grid" style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
           gap: '24px'
         }}>
-          {albums.map(album => (
+          {filteredAlbums.map(album => (
             <div 
               key={album.id}
               className="album-card"
@@ -167,16 +297,28 @@ const Albums = ({ onOpenAlbumView, showToast }) => {
                   <span>
                     {getAlbumMemoryCount(album)} {getAlbumMemoryCount(album) === 1 ? 'memory' : 'memories'}
                   </span>
-                  <button
-                    className="btn btn--outline btn--sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteAlbum(album.id, album.name);
-                    }}
-                    style={{ padding: '4px 12px' }}
-                  >
-                    Delete
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      className="btn btn--outline btn--sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenCollaboration(album);
+                      }}
+                      style={{ padding: '4px 12px' }}
+                    >
+                      👥 Share
+                    </button>
+                    <button
+                      className="btn btn--outline btn--sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteAlbum(album.id, album.name);
+                      }}
+                      style={{ padding: '4px 12px' }}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -239,6 +381,14 @@ const Albums = ({ onOpenAlbumView, showToast }) => {
           </div>
         </div>
       )}
+
+      {/* Smart Album Modal */}
+      <SmartAlbumModal
+        isOpen={showSmartAlbumModal}
+        onClose={() => setShowSmartAlbumModal(false)}
+        showToast={showToast}
+        memories={memories}
+      />
     </div>
   );
 };
