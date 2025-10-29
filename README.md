@@ -80,6 +80,9 @@ npm run preview
 ![Statistics](images/statistics.png)
 *Beautiful visualizations of your memory data*
 
+![Stats Dashboard](images/stats.png)
+*Detailed analytics and insights*
+
 ### Albums
 ![Albums](images/albums.png)
 *Custom collections for organizing memories*
